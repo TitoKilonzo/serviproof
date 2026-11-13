@@ -1,0 +1,18 @@
+import { Router } from 'express';
+import multer from 'multer';
+import path from 'node:path';
+import fs from 'node:fs';
+import crypto from 'node:crypto';
+import { pool } from '../db.js';
+import { asyncHandler } from '../utils.js';
+import type { AuthedRequest } from '../types.js';
+const router=Router();
+const uploadDir=path.resolve(process.env.UPLOAD_DIR??'./uploads');fs.mkdirSync(uploadDir,{recursive:true});
+const maxMb=Number(process.env.MAX_UPLOAD_MB??10);
+const storage=multer.diskStorage({destination:uploadDir,filename:(_req,file,cb)=>cb(null,crypto.randomUUID()+path.extname(file.originalname).toLowerCase().slice(0,10))});
+const upload=multer({storage,limits:{fileSize:maxMb*1024*1024,files:1},fileFilter:(_req,file,cb)=>{const allowed=['image/jpeg','image/png','image/webp','application/pdf'];cb(null,allowed.includes(file.mimetype));}});
+const scope=(u:AuthedRequest['user'])=>u?.role==='customer'?' AND w.customer_id=$3':u?.role==='technician'?' AND w.assigned_to=$3':'';
+router.get('/work-orders/:id/evidence',asyncHandler(async(req,res)=>{const u=(req as AuthedRequest).user!;const values:any[]=[req.params.id,u.companyId];const filter=scope(u);if(filter)values.push(u.role==='customer'?u.customerId:u.id);const job=await pool.query(`SELECT id FROM work_orders w WHERE id=$1 AND company_id=$2${filter}`,values);if(!job.rowCount)return res.status(404).json({error:'Work order not found.'});const r=await pool.query('SELECT id,original_name,mime_type,size_bytes,caption,created_at FROM evidence WHERE work_order_id=$1 AND company_id=$2 ORDER BY created_at DESC',[req.params.id,u.companyId]);res.json({evidence:r.rows});}));
+router.post('/work-orders/:id/evidence',upload.single('file'),asyncHandler(async(req,res)=>{const u=(req as AuthedRequest).user!;if(!req.file)return res.status(400).json({error:'Select an image or PDF file (maximum '+maxMb+' MB).'});const values:any[]=[req.params.id,u.companyId];const filter=scope(u);if(filter)values.push(u.role==='customer'?u.customerId:u.id);const job=await pool.query(`SELECT id FROM work_orders w WHERE id=$1 AND company_id=$2${filter}`,values);if(!job.rowCount){fs.unlinkSync(req.file.path);return res.status(404).json({error:'Work order not found.'});}const r=await pool.query(`INSERT INTO evidence(company_id,work_order_id,uploaded_by,storage_key,original_name,mime_type,size_bytes,caption) VALUES($1,$2,$3,$4,$5,$6,$7,$8) RETURNING id,original_name,mime_type,size_bytes,caption,created_at`,[u.companyId,req.params.id,u.id,req.file.filename,path.basename(req.file.originalname),req.file.mimetype,req.file.size,(req.body.caption??'').slice(0,250)||null]);res.status(201).json({evidence:r.rows[0]});}));
+router.get('/evidence/:id/file',asyncHandler(async(req,res)=>{const u=(req as AuthedRequest).user!;const values:any[]=[req.params.id,u.companyId];let extra='';if(u.role==='customer'){extra=' AND w.customer_id=$3';values.push(u.customerId);}else if(u.role==='technician'){extra=' AND w.assigned_to=$3';values.push(u.id);}const r=await pool.query(`SELECT e.storage_key,e.original_name,e.mime_type FROM evidence e JOIN work_orders w ON w.id=e.work_order_id AND w.company_id=e.company_id WHERE e.id=$1 AND e.company_id=$2${extra}`,values);if(!r.rowCount)return res.status(404).json({error:'Evidence not found.'});const full=path.resolve(uploadDir,r.rows[0].storage_key);if(!full.startsWith(uploadDir+path.sep)||!fs.existsSync(full))return res.status(404).json({error:'File is no longer available.'});res.setHeader('Content-Type',r.rows[0].mime_type);res.setHeader('Content-Disposition',`inline; filename="${encodeURIComponent(r.rows[0].original_name)}"`);res.sendFile(full);}));
+export default router;

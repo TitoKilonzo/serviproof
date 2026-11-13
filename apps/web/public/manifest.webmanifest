@@ -1,0 +1,10 @@
+{
+  "name": "ServiProof Service Operations",
+  "short_name": "ServiProof",
+  "description": "Schedule, deliver and prove every service visit.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#f4f7f4",
+  "theme_color": "#17251f",
+  "icons": [{"src":"/serviproof.svg","sizes":"any","type":"image/svg+xml","purpose":"any maskable"}]
+}

@@ -21,6 +21,7 @@ app.use(helmet({crossOriginResourcePolicy:{policy:'cross-origin'},contentSecurit
 app.use(cors({origin:allowedOrigins,credentials:true,methods:['GET','POST','PATCH','PUT','DELETE','OPTIONS'],allowedHeaders:['Content-Type','Authorization']}));
 app.use((req,res,next)=>{if(['POST','PUT','PATCH','DELETE'].includes(req.method)){const requestOrigin=req.get('origin');if(requestOrigin&&!allowedOrigins.includes(requestOrigin))return res.status(403).json({error:'Request origin is not permitted.'});}next();});
 app.use(express.json({limit:'1mb'}));app.use(express.urlencoded({extended:false,limit:'1mb'}));app.use(cookieParser());
+app.get('/',(_req,res)=>res.json({status:'running',service:'ServiProof API',health:'/api/health'}));
 app.get('/api/health',async(_req,res)=>{try{await pool.query('SELECT 1');res.json({status:'ok',service:'ServiProof API',database:'connected',timestamp:new Date().toISOString()});}catch{res.status(503).json({status:'degraded',service:'ServiProof API',database:'unavailable'});}});
 app.use('/api/auth',rateLimit({windowMs:15*60*1000,limit:30,standardHeaders:true,legacyHeaders:false,message:{error:'Too many attempts. Please try again later.'}}),authRoutes);
 app.use('/api',authenticate,appRoutes);

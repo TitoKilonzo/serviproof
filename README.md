@@ -111,6 +111,7 @@ npm run dev
 - Web: `http://localhost:5173`
 - API health: `http://localhost:4000/api/health`
 
+The API root (`/`) returns a service status response. Use `/api/health` to verify database connectivity.
 The web app reads `VITE_API_URL`. For local development, set it to `http://localhost:4000/api` in the root `.env` or `apps/web/.env.local`.
 The public Home, About and Contact pages are available at `/`, `/about` and `/contact`. Set `VITE_CONTACT_EMAIL` in `apps/web/.env.local` (and in the web deployment’s build environment) to enable the Contact form; it opens the visitor’s configured email app with the message prefilled. The PWA install button uses the browser install prompt when available and provides platform instructions otherwise.
 

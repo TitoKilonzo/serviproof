@@ -1,10 +1,10 @@
 const configuredApiUrl = import.meta.env.VITE_API_URL?.trim() || 'http://localhost:4000/api';
 const normalizedApiUrl = configuredApiUrl.replace(/\/+$/, '');
-const API_URL = import.meta.env.PROD
-  ? '/api'
-  : normalizedApiUrl.endsWith('/api')
+const API_URL = import.meta.env.MODE === 'development'
+  ? normalizedApiUrl.endsWith('/api')
     ? normalizedApiUrl
-    : `${normalizedApiUrl}/api`;
+    : `${normalizedApiUrl}/api`
+  : '/api';
 export class ApiError extends Error { status:number; constructor(message:string,status:number){super(message);this.name='ApiError';this.status=status;} }
 export async function api<T=any>(path:string,options:RequestInit={}):Promise<T>{
   const isForm=options.body instanceof FormData;

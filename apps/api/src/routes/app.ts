@@ -55,7 +55,7 @@ router.get('/dashboard', asyncHandler(async (req, res) => {
   ]);
   const counts: Record<string,number> = { scheduled:0,assigned:0,en_route:0,in_progress:0,completed:0,cancelled:0,needs_review:0 };
   jobs.rows.forEach((r:any)=>{counts[r.status]=Number(r.count)});
-  res.json({ metrics:{ customers:customers.rows[0].count,sites:sites.rows[0].count,activeContracts:contracts.rows[0].count,openJobs:counts.scheduled+counts.assigned+counts.en_route+counts.in_progress,completedJobs:counts.completed,outstanding:Number(invoices.rows[0].outstanding),invoiceCount:invoices.rows[0].count,revenue:Number(revenue.rows[0].total) }, jobCounts:counts, upcoming:upcoming.rows, recent:recent.rows });
+  res.json({ metrics:{ customers:customers.rows[0].count,sites:sites.rows[0].count,activeContracts:contracts.rows[0].count,openJobs:(counts.scheduled??0)+(counts.assigned??0)+(counts.en_route??0)+(counts.in_progress??0),completedJobs:counts.completed??0,outstanding:Number(invoices.rows[0].outstanding),invoiceCount:invoices.rows[0].count,revenue:Number(revenue.rows[0].total) }, jobCounts:counts, upcoming:upcoming.rows, recent:recent.rows });
 }));
 
 router.get('/customers', requireRole('owner','admin','dispatcher','customer'), asyncHandler(async (req,res)=>{

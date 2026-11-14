@@ -11,6 +11,31 @@ const customerClause = (req: AuthedRequest, alias = '') => req.user!.role === 'c
 const jobClause = (req: AuthedRequest, alias = '') => req.user!.role === 'customer' ? ` AND ${alias}customer_id='${req.user!.customerId}'` : req.user!.role === 'technician' ? ` AND ${alias}assigned_to='${req.user!.id}'` : '';
 const canManage = [ 'owner','admin','dispatcher' ] as Role[];
 
+router.get('/notifications', asyncHandler(async (req, res) => {
+  const u = (req as AuthedRequest).user!;
+  const c = company(req as AuthedRequest);
+  let result;
+  if (u.role === 'technician') {
+    result = await pool.query(`SELECT action,entity_type,created_at FROM audit_logs
+      WHERE company_id=$1 AND entity_type='work_order'
+        AND entity_id IN (SELECT id FROM work_orders WHERE company_id=$1 AND assigned_to=$2)
+      ORDER BY created_at DESC LIMIT 10`, [c, u.id]);
+  } else if (u.role === 'customer') {
+    result = await pool.query(`SELECT action,entity_type,created_at FROM audit_logs
+      WHERE company_id=$1 AND entity_id IN (
+        SELECT id FROM work_orders WHERE company_id=$1 AND customer_id=$2
+        UNION SELECT id FROM contracts WHERE company_id=$1 AND customer_id=$2
+        UNION SELECT id FROM invoices WHERE company_id=$1 AND customer_id=$2
+        UNION SELECT id FROM sites WHERE company_id=$1 AND customer_id=$2
+      )
+      ORDER BY created_at DESC LIMIT 10`, [c, u.customerId]);
+  } else {
+    result = await pool.query(`SELECT action,entity_type,created_at FROM audit_logs
+      WHERE company_id=$1 ORDER BY created_at DESC LIMIT 10`, [c]);
+  }
+  res.json({ notifications: result.rows });
+}));
+
 router.get('/dashboard', asyncHandler(async (req, res) => {
   const u = (req as AuthedRequest).user!; const c = company(req as AuthedRequest);
   const jobFilter = u.role === 'customer' ? ' AND customer_id=$2' : u.role === 'technician' ? ' AND assigned_to=$2' : '';

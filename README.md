@@ -17,7 +17,8 @@ This repository contains the web application, API, PostgreSQL schema, demo seed 
 - Print-ready service report that can be saved as PDF from the browser.
 - Invoice creation, line items, tax, payment recording and outstanding-balance calculation.
 - M-Pesa transaction reference capture for manual reconciliation.
-- Operational dashboard, service trends, service-type reports and customer activity.
+- Operational dashboard, service trends, service-type reports and customer activity, with print-to-PDF and Excel-compatible CSV exports.
+- Recent-activity notifications scoped to the signed-in user's workspace and assigned/customer records.
 - Daily recurring contract generator and overdue-invoice status updater.
 - Company profile and workspace settings.
 
@@ -122,7 +123,7 @@ Use workspace code `greenleaf-pest` for the demo workspace. The seeded password 
 | Owner / demo admin | `admin@greenleafpest.com` |
 | Dispatcher | `dispatcher@greenleafpest.com` |
 | Technician | `technician@greenleafpest.com` |
-| Customer portal | `customer.westlands@example.com` |
+| Customer portal | `customer@westlands.com` |
 
 These are development demo credentials, not production accounts. Change or delete them before exposing a seeded workspace publicly. The credentials are intentionally documented here rather than displayed in the application UI.
 
@@ -195,7 +196,7 @@ The product includes integration-ready workflows, but credentials and provider a
 - **Object storage:** uploads currently use a private local filesystem adapter. Use persistent disk for a small single-instance deployment or replace it with private object storage before horizontal scaling.
 - **Digital signature:** the current UI stores an optional customer sign-off name/reference. A drawn signature canvas and legally reviewed signature flow are not included.
 - **Offline:** the PWA caches the application shell and queues work-order completion. It does not yet provide a complete offline copy of customer/job data or offline evidence uploads.
-- **PDF:** service reports use the browser print dialog and can be saved as PDF. Server-generated, tamper-evident PDF documents are not included.
+- **PDF:** service and performance reports use the browser print dialog and can be saved as PDF. Report data can also be exported as Excel-compatible CSV. Server-generated, tamper-evident PDF documents are not included.
 
 ## Production readiness checklist
 

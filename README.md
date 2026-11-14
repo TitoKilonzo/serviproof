@@ -163,7 +163,7 @@ A starting Blueprint is provided in `render.yaml`. Review the service plan, data
 - `DATABASE_URL`: Render PostgreSQL connection string.
 - `JWT_SECRET`: at least 32 random characters; the Blueprint generates one.
 - `COOKIE_SECURE=true`.
-- `WEB_ORIGIN`: the exact production frontend origin, without a trailing slash.
+- `WEB_ORIGIN`: the exact production frontend origin, without a trailing slash. The Blueprint defaults to `https://web-ud1c-umber.vercel.app`; change it when using a different frontend domain.
 - `UPLOAD_DIR=/var/data/uploads` when using the provided Render persistent disk.
 - `DATABASE_SSL`: set according to the database connection endpoint you use.
 
@@ -177,9 +177,8 @@ Import the repository and set the project root to `apps/web`. Configure:
 
 - Build command: `npm run build`.
 - Output directory: `dist`.
-- `VITE_API_URL`: `https://YOUR-API-HOST/api`.
 
-The `apps/web/vercel.json` file provides SPA fallback routing. Configure the API's `WEB_ORIGIN` to the exact Vercel origin.
+The `apps/web/vercel.json` file proxies `/api` requests to Render and provides SPA fallback routing. Production builds use this same origin proxy, so they do not need `VITE_API_URL`. For local development, the API defaults to `http://localhost:4000/api`.
 
 For the most reliable cookie behaviour, use custom domains under the same registrable domain (for example `app.example.com` and `api.example.com`). Cross-site cookie policies can vary by browser when the frontend and API use unrelated hosting domains. HTTPS is mandatory when `COOKIE_SECURE=true`.
 

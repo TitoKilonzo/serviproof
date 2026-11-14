@@ -31,7 +31,7 @@ services:
       - key: MAX_UPLOAD_MB
         value: "10"
       - key: WEB_ORIGIN
-        sync: false
+        value: https://web-ud1c-umber.vercel.app
 
 databases:
   - name: serviproof-db

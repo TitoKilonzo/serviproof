@@ -4,7 +4,7 @@
   "description": "Schedule, deliver and prove every service visit.",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#f4f7f4",
-  "theme_color": "#17251f",
+  "background_color": "#f7fafc",
+  "theme_color": "#15283a",
   "icons": [{"src":"/serviproof.svg","sizes":"any","type":"image/svg+xml","purpose":"any maskable"}]
 }

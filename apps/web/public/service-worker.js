@@ -1,5 +1,5 @@
-const CACHE='serviproof-shell-v1';
-const SHELL=['/','/manifest.webmanifest','/serviproof.svg'];
+const CACHE='serviproof-shell-v2';
+const SHELL=['/','/about','/contact','/login','/manifest.webmanifest','/serviproof.svg'];
 self.addEventListener('install',event=>event.waitUntil(caches.open(CACHE).then(cache=>cache.addAll(SHELL))));
 self.addEventListener('activate',event=>event.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(key=>key!==CACHE).map(key=>caches.delete(key))))));
 self.addEventListener('fetch',event=>{

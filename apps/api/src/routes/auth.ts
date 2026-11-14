@@ -6,15 +6,20 @@ import { asyncHandler } from '../utils.js';
 import { authenticate, clearSession, setSession } from '../middleware/auth.js';
 import type { SessionUser } from '../types.js';
 const router = Router();
-const loginSchema = z.object({ email: z.string().email().max(190), password: z.string().min(8).max(120), companySlug: z.string().min(2).max(80) });
-const registerSchema = z.object({ companyName: z.string().min(2).max(120), fullName: z.string().min(2).max(120), email: z.string().email().max(190), password: z.string().min(10).max(120), phone: z.string().max(40).optional() });
+const loginSchema = z.object({ email: z.string().trim().email().max(190), password: z.string().min(8).max(120), companySlug: z.string().trim().min(2).max(80).optional() });
+const registerSchema = z.object({ companyName: z.string().min(2).max(120), fullName: z.string().min(2).max(120), email: z.string().trim().email().max(190), password: z.string().min(10).max(120), phone: z.string().max(40).optional() });
 router.post('/login', asyncHandler(async (req, res) => {
   const parsed = loginSchema.safeParse(req.body); if (!parsed.success) return res.status(400).json({ error: 'Enter a valid email and password.' });
   const email = parsed.data.email.toLowerCase();
   const result = await pool.query(`SELECT u.id,u.company_id,u.customer_id,u.full_name,u.email,u.password_hash,u.role,c.name AS company_name,c.slug AS company_slug
-    FROM users u JOIN companies c ON c.id=u.company_id WHERE lower(u.email)=lower($1) AND u.is_active=true AND c.slug=$2 ORDER BY u.created_at ASC LIMIT 1`, [email, parsed.data.companySlug]);
-  const row = result.rows[0];
-  if (!row || !(await bcrypt.compare(parsed.data.password, row.password_hash))) return res.status(401).json({ error: 'The email or password you entered is incorrect.' });
+    FROM users u JOIN companies c ON c.id=u.company_id WHERE lower(u.email)=lower($1) AND u.is_active=true AND ($2::text IS NULL OR c.slug=$2) ORDER BY u.created_at ASC`, [email, parsed.data.companySlug ?? null]);
+  const matchingRows = [];
+  for (const candidate of result.rows) {
+    if (await bcrypt.compare(parsed.data.password, candidate.password_hash)) matchingRows.push(candidate);
+  }
+  if (!matchingRows.length) return res.status(401).json({ error: 'The email or password you entered is incorrect.' });
+  if (matchingRows.length > 1) return res.status(400).json({ error: 'Enter your workspace code to choose the right workspace.' });
+  const row = matchingRows[0];
   await pool.query('UPDATE users SET last_login_at=now() WHERE id=$1', [row.id]);
   const user: SessionUser = { id: row.id, companyId: row.company_id, customerId: row.customer_id, fullName: row.full_name, email: row.email, role: row.role, companyName: row.company_name, companySlug: row.company_slug };
   setSession(res, user); res.json({ user });
